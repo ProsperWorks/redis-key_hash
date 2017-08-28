@@ -1,0 +1,3 @@
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+require 'redis/key_hash'
+require 'minitest/autorun'
