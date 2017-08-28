@@ -1,6 +1,7 @@
 # Redis::KeyHash
 
-TODO: Delete this and the text above, and describe your gem
+Tests of key hash slot agreement for use with Redis Cluster and
+RedisLabs Enterprise Cluster.
 
 ## Installation
 
