@@ -34,6 +34,7 @@ Or install it yourself as:
     else
       'sad'
     end
+    Redis.all_in_one_slot!('a','b') # may raise Redis::ImpendingCrossSlotError
 
 ## Development
 
@@ -51,5 +52,5 @@ the `.gem` file to [rubygems.org](https://rubygems.org).
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at
-https://github.com/[USERNAME]/redis-key_hash.
+https://github.com/ProsperWorks/redis-key_hash.
 
