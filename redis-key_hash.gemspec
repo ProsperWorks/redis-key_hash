@@ -5,11 +5,11 @@ require 'redis/key_hash/version'
 Gem::Specification.new do |spec|
   spec.name          = "redis-key_hash"
   spec.version       = Redis::KeyHash::VERSION
-  spec.authors       = ["jhw-at-prosperworks-com"]
+  spec.authors       = ["jhwillet"]
   spec.email         = ["jhw@prosperworks.com"]
 
   spec.summary       = 'Tests Redis Cluster key hash slot agreement'
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = 'https://github.com/ProsperWorks/redis-key_hash'
   spec.description   = %{
 redis-key_hash provides tests of key hash slot agreement for use with
 Redis Cluster and RedisLabs Enterprise Cluster.
@@ -37,7 +37,7 @@ without support services or with a non-sharded Redis.
   # delete this section to allow pushing to any host.
   #
   if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = "TODO: Set to 'http://mygemserver.com'"
+    spec.metadata['allowed_push_host'] = 'http://mygemserver.com'
   else
     raise "RubyGems 2.0 or newer is required to protect against " \
       "public gem pushes."
@@ -58,5 +58,6 @@ without support services or with a non-sharded Redis.
   spec.add_development_dependency "minitest", "~> 5.10"
 
   # This gem is pure Ruby, no weird dependencies.
+  #
   spec.platform = Gem::Platform::RUBY
 end

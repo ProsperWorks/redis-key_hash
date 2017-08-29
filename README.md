@@ -21,7 +21,19 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+    require 'redis/key_hash'
+    
+    # As syntactic sugar, expose Redis::KeyHash methods in the Redis class.
+    #
+    Redis.include Redis::KeyHash
+    
+    # Test whether several keys will hash to the same slot.
+    #
+    if Redis.all_in_one_slot?('a','b')
+      'happy'
+    else
+      'sad'
+    end
 
 ## Development
 
