@@ -20,7 +20,7 @@ module Redis::KeyHash
       # and is taken largely from the reference example provided in
       # http://redis.io/topics/cluster-spec.
       #
-      :rc   => /{([^}]*)}/,     # RC uses the first {}-expr
+      :rc   => /^[^{]*{([^}]+)}/, # RC uses first {}-expr, but only if nonempty
 
       # The :style => :rlec implementation is partly speculative.  It
       # is mostly interpreted from the default RedisLabs Enterprise
@@ -33,9 +33,7 @@ module Redis::KeyHash
       # :rc uses the first {}-expr in the, :rlec uses the last
       # {}-expr.
       #
-      # TODO: As of redis-key_hash 0.0.1, :rlec may be buggy in some edge cases!
-      #
-      :rlec => /.*\{(.*)\}.*/,  # RLEC default per docs, uses last {}-expr
+      :rlec => /.*\{(.*)\}.*/,    # RLEC default per docs, uses last {}-expr
 
     }.freeze
 

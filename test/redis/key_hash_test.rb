@@ -69,10 +69,7 @@ class Redis
       #   usually since the first occurrence of { is followed by } on
       #   the right without characters in the middle.
       #
-      # TODO: redis/key_hash gets this wrong in v0.0.1!!!!!!!!!
-      #
-      #[ 'foo{}{bar}', :rc, 'foo{}{bar}' ], # per spec
-      [  'foo{}{bar}', :rc, '' ],           # per code
+      [ 'foo{}{bar}', :rc, 'foo{}{bar}' ],
       #
       # https://redis.io/topics/cluster-spec
       #
@@ -84,32 +81,43 @@ class Redis
       #
       # https://redis.io/topics/cluster-spec
       #
+      #   For the key foo{bar}{zap} the substring bar will be hashed,
+      #   since the algorithm stops at the first valid or invalid
+      #   (without bytes inside) match of { and }.
+      #
+      [ 'foo{bar}{zap}', :rc, 'bar' ],
+      #
+      # https://redis.io/topics/cluster-spec
+      #
       #   What follows from the algorithm is that if the key starts
       #   with {}, it is guaranteed to be hashed as a whole. This is
       #   useful when using binary data as key names.
       #
-      # TODO: redis/key_hash gets this wrong in v0.0.1!!!!!!!!!
-      #
-      #[ '{}',                     :rc, '{}'                     ], # per spec
-      #[ '{}f',                    :rc, '{}f'                    ], # per spec
-      #[ '{}f{x}}{{}',             :rc, '{}f{x}}{{}'             ], # per spec
-      #[ '{}'+["d19b"].pack('H*'), :rc, '{}'+["d19b"].pack('H*') ], # per spec
-      [ '{}',                      :rc, ''                       ], # per code
-      [ '{}f',                     :rc, ''                       ], # per code
-      [ '{}f{x}}{{}',              :rc, ''                       ], # per code
-      [ '{}'+["d19b"].pack('H*'),  :rc, ''                       ], # per code
+      [ '{}',                     :rc, '{}'                     ], # per spec
+      [ '{}f',                    :rc, '{}f'                    ], # per spec
+      [ '{}f{x}}{{}',             :rc, '{}f{x}}{{}'             ], # per spec
+      [ '{}'+["d19b"].pack('H*'), :rc, '{}'+["d19b"].pack('H*') ], # per spec
       #
       # Additional edge cases with empty {}-exprs, which may not match
       # the RC or RLEC specs.
       #
-      # TODO: redis/key_hash probably gets these wrong in v0.0.1!!!!!!!!!
+      # I validated these tests these against an actual RLEC:
       #
-      [ 'foo{}{bar}', :rc,            ''    ], # TODO: may be incorrect behavior
-      [ 'foo{}{bar}', :rlec,          'bar' ], # TODO: may be incorrect behavior
-      [ 'foo{bar}{}', :rc,            'bar' ], # TODO: may be incorrect behavior
-      [ 'foo{bar}{}', :rlec,          ''    ], # TODO: may be incorrect behavior
+      #   host:port> eval 'return KEYS' 2 a b
+      #   (error) ERR CROSSSLOT Keys in request don't hash to the same slot
+      #
+      #   host:port> eval 'return KEYS' 2 'foo{}{bar}' 'bar'
+      #   1) "foo{}{bar}"
+      #   2) "bar"
+      #
+      #   host:port> eval 'return KEYS' 2 'foo{bar}{}' ''
+      #   1) "foo{bar}{}"
+      #   2) ""
+      #
+      [ 'foo{}{bar}', :rlec,          'bar'        ],
+      [ 'foo{bar}{}', :rlec,          ''           ],
     ].each do |str,style,expect|
-      define_method("test_hash_tag_#{str}_#{style}") do
+      define_method("test_hash_tag_#{str}_#{style}_#{expect}") do
         assert_equal expect, hash_tag(str,style: style)
       end
     end
