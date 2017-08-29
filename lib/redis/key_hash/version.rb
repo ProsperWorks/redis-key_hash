@@ -1,17 +1,19 @@
 class Redis
   module KeyHash
     #
-    # Version plan:
+    # Version plan/history:
     #
     # 0.0.1 - still in Prosperworks/ALI/vendor/gems/redis-key_hash
     #
-    # 0.0.2 - broke out into Prosperworks/redis-key_hash
+    # 0.0.2 - broke out into Prosperworks/redis-key_hash, make public
     #
-    # 0.1.0 - big README.md and Rdoc update, open repo
+    # 0.0.3 - fixes
     #
-    # 0.2.0 - solicit and incorporate initial feedback from select
-    #         beta external users
+    # 0.1.0 - (future) big README.md and Rdoc update, solicit feedback
+    #         from select external beta users
     #
-    VERSION = "0.0.2" # broken into standalone repo, not polished
+    # 0.2.0 - (future) incorporate feedback, announce
+    #
+    VERSION = '0.0.3'
   end
 end
