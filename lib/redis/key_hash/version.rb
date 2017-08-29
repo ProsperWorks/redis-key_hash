@@ -7,7 +7,8 @@ class Redis
     #
     # 0.0.2 - Broke out into Prosperworks/redis-key_hash, make public.
     #
-    # 0.0.3 - Fix :rc regexp to match https://redis.io/topics/cluster-spec.
+    # 0.0.3 - Fix :rc to match https://redis.io/topics/cluster-spec,
+    #         added Rubocop checks.
     #
     # 0.1.0 - (future) Big README.md and Rdoc update, solicit feedback
     #         from select external beta users.

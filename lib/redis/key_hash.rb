@@ -9,7 +9,6 @@ module Redis::KeyHash
 
   module ClassMethods
 
-    # TODO: rubocop
     # TODO: rdoc
 
     # KNOWN_STYLES are the known reference styles.

@@ -225,7 +225,7 @@ class Redis
       assert_equal 56860, crc16('monkeys')
     end
 
-    def test_hash_slot_agrees_with_DVIRSKY_CRC16_SLOTTABLE_H
+    def test_hash_slot_agrees_with_dvirsky_crc16_slottable_h
       DVIRSKY_CRC16_SLOTTABLE_H.each_with_index do |str,idx|
         assert_equal idx, hash_slot(str), "#{str} at #{idx}"
       end

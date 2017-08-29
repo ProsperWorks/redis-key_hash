@@ -1,5 +1,10 @@
 sudo: false
 language: ruby
+before_install:
+  - gem install bundler -v 1.14.6
+  - gem install rubocop
 rvm:
   - 2.1.6
-before_install: gem install bundler -v 1.14.6
+script:
+  - rubocop
+  - rake test
