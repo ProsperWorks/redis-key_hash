@@ -3,4 +3,4 @@ AllCops:
   Include:
     - Rakefile
     - Gemfile
-    - redis-key_hash.gemspec
+    - '*.gemspec'
