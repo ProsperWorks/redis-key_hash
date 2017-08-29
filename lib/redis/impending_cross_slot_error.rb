@@ -5,8 +5,6 @@
 #
 #  (error) CROSSSLOT Keys in request don't hash to the same slot
 #
-# TODO: rubocop
-#
 # TODO: rdoc
 #
 class Redis
