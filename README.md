@@ -1,7 +1,5 @@
 # Redis::KeyHash ![TravisCI](https://travis-ci.org/ProsperWorks/redis-key_hash.svg?branch=master)
 
-https://travis-ci.org/ProsperWorks/redis-key_hash.svg?branch=master
-
 redis-key_hash provides tests of key hash slot agreement for use with
 Redis Cluster and RedisLabs Enterprise Cluster.
 

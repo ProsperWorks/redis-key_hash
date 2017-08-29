@@ -8,13 +8,36 @@ module Redis::KeyHash
   end
 
   module ClassMethods
-    # TODO: rubocop
 
+    # TODO: rubocop
     # TODO: rdoc
 
+    # KNOWN_STYLES are the known reference styles.
     #
-    # TODO: KNOWN_STYLES hash, etc, move comments around
-    #
+    KNOWN_STYLES   ||= {
+
+      # The :style => :rc implementation matches Redis Cluster exactly
+      # and is taken largely from the reference example provided in
+      # http://redis.io/topics/cluster-spec.
+      #
+      :rc   => /{([^}]*)}/,     # RC uses the first {}-expr
+
+      # The :style => :rlec implementation is partly speculative.  It
+      # is mostly interpreted from the default RedisLabs Enterprise
+      # Cluster documentation at
+      # https://redislabs.com/redis-enterprise-documentation/concepts-architecture/architecture/database-clustering/,
+      # plus our experience at ProsperWorks that, out of the box, RLEC
+      # uses the *last* {}-expr, not the first as in RC, from :rc
+      # (which we would not care about), they are also structually
+      # different (which can cause bugs unless we take special care).
+      # :rc uses the first {}-expr in the, :rlec uses the last
+      # {}-expr.
+      #
+      # TODO: As of redis-key_hash 0.0.1, :rlec may be buggy in some edge cases!
+      #
+      :rlec => /.*\{(.*)\}.*/,  # RLEC default per docs, uses last {}-expr
+
+    }.freeze
 
     # The default for all_in_one_slot? and all_in_one_slot! is
     # [:rc,:rlec] to encourage the of portable persistent hashing
@@ -97,20 +120,6 @@ module Redis::KeyHash
     # Computes the hash tag for a given key under a given Redis
     # clustering algorithm.
     #
-    # The :style => :rc implementation matches Redis Cluster exactly
-    # and is taken largely from the reference example provided in
-    # http://redis.io/topics/cluster-spec.
-    #
-    # The :style => :rlec implementation is partly speculative.  It is
-    # mostly interpreted from the default RedisLabs Enterprise Cluster
-    # document
-    # https://redislabs.com/redis-enterprise-documentation/concepts-architecture/architecture/database-clustering/
-    # plus our experience at ProsperWorks that, out of the box, RLEC
-    # uses the *last* {}-expr, not the first as in RC, from :rc (which
-    # we would not care about), they are also structually different
-    # (which can cause bugs unless we take special care).  :rc uses
-    # the first {}-expr in the, :rlec uses the last {}-expr.
-    #
     # @param String key to be hashed
     #
     # @param Symbol :rc or rlec or Regexp which defines one capture group
@@ -119,13 +128,10 @@ module Redis::KeyHash
     #
     def hash_tag(key, style: DEFAULT_STYLE)
       regexp = nil
-      case style
-      when :rc
-        regexp = /{([^}]*)}/     # RC uses the first {}-expr
-      when :rlec
-        regexp = /.*\{(.*)\}.*/  # RLEC default per docs, uses last {}-expr
-      when Regexp
-        regexp = style           # you can define your own
+      if KNOWN_STYLES.has_key?(style)
+        regexp = KNOWN_STYLES[style] # some are predefined
+      elsif style.is_a?(Regexp)
+        regexp = style               # you can define your own
       end
       if !regexp
         raise ArgumentError, "bogus style #{style}"
