@@ -5,8 +5,13 @@ require 'redis/key_hash/version'
 Gem::Specification.new do |spec|
   spec.name          = "redis-key_hash"
   spec.version       = Redis::KeyHash::VERSION
-  spec.authors       = ["jhwillet"]
-  spec.email         = ["jhw@prosperworks.com"]
+  spec.authors       = [
+    "jhwillett"
+  ]
+  spec.email         = [
+    "jhw@prosperworks.com"
+  ]
+  spec.license       = 'MIT'
 
   spec.summary       = 'Tests Redis Cluster key hash slot agreement'
   spec.homepage      = 'https://github.com/ProsperWorks/redis-key_hash'
@@ -31,17 +36,6 @@ sending a command to Redis which is at risk of CROSSLOT failure.  We
 can also validate key management schemes in unit tests which run
 without support services or with a non-sharded Redis.
 }
-
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either
-  # set the 'allowed_push_host' to allow pushing to a single host or
-  # delete this section to allow pushing to any host.
-  #
-  if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = 'http://mygemserver.com'
-  else
-    raise "RubyGems 2.0 or newer is required to protect against " \
-      "public gem pushes."
-  end
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
