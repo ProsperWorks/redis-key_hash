@@ -11,10 +11,8 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Tests Redis Cluster key hash slot agreement'
   spec.homepage      = 'https://github.com/ProsperWorks/redis-key_hash'
-  spec.description   = %{
-redis-key_hash provides tests of key hash slot agreement for use with
-Redis Cluster and RedisLabs Enterprise Cluster.
-}
+  spec.description   =
+    'Hash slot tests for Redis Cluster and RedisLabs Enterprise Cluster.'
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})

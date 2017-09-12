@@ -7,7 +7,7 @@ module Redis::KeyHash
     base.extend(ClassMethods)
   end
 
-  module ClassMethods
+  module ClassMethods # TODO: this is bunk, make natively on Redis::KeyHash
 
     # TODO: rdoc
 
@@ -67,13 +67,11 @@ module Redis::KeyHash
     # all styles by virtue of having a single hash_tag, false otherwise.
     #
     def all_in_one_slot?(*keys, namespace: nil, styles: DEFAULT_STYLES)
-      begin
-        all_in_one_slot!(*keys, namespace: namespace, styles: styles)
-      rescue Redis::ImpendingCrossSlotError
-        return false
-      else
-        return true
-      end
+      all_in_one_slot!(*keys, namespace: namespace, styles: styles)
+    rescue Redis::ImpendingCrossSlotError
+      return false
+    else
+      return true
     end
 
     # Like all_in_one_slot?, mismatch raises Redis::ImpendingCrossSlotError.
@@ -96,6 +94,11 @@ module Redis::KeyHash
     # same hash_slot
     #
     def all_in_one_slot!(*keys, namespace: nil, styles: DEFAULT_STYLES)
+      #
+      # TODO: broken when namepsace=''
+      #
+      # TODO: include nkeys in err
+      #
       nkeys       = namespace ? keys.map { |key| "#{namespace}:#{key}" } : keys
       style2slot  = Hash.new
       problems    = []
@@ -125,7 +128,7 @@ module Redis::KeyHash
     #
     def hash_tag(key, style: DEFAULT_STYLE)
       regexp = nil
-      if KNOWN_STYLES.has_key?(style)
+      if KNOWN_STYLES.key?(style)
         regexp = KNOWN_STYLES[style] # some are predefined
       elsif style.is_a?(Regexp)
         regexp = style               # you can define your own
@@ -134,7 +137,7 @@ module Redis::KeyHash
         raise ArgumentError, "bogus style #{style}"
       end
       match = regexp.match(key)
-      return match ? match[1] : key
+      match ? match[1] : key
     end
 
     # Computes the Redis hash_slot for a given key.
@@ -213,5 +216,8 @@ module Redis::KeyHash
     ].freeze
 
   end
+
+  extend ClassMethods
+  include ClassMethods
 
 end

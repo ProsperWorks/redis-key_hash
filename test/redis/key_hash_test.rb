@@ -232,13 +232,13 @@ class Redis
       assert_equal 2 ** 14, DVIRSKY_CRC16_SLOTTABLE_H.size
     end
 
-    #
-    # Happy sets of keys which match via both forms of hash_slot, :rc and :rlec.
+    # Happy sets of keys which match via both forms of hash_slot, :rc
+    # and :rlec.
     #
     # Unhappy sets of keys mismatch via either :rc, :rlec, or both.
     #
-    # redis-namespace can have a big effect since it alters the keys but
-    # only at the front.
+    # redis-namespace can have a big effect since it alters the keys
+    # but only at the front.
     #
     [
       [[],                      nil,     true],   # nothing to mismatch
@@ -271,12 +271,12 @@ class Redis
       [['a{k}b','k'],           nil,     true],
       [['a{k}b','k'],           'foo',   false],
       [['a{k}b','k'],           'A:{r}', false],
-      [['{a}x{b}','{a}y{b}'],   nil,     true],   # rc via a == a, rlec via b == b
-      [['{a}x{b}','{a}y{b}'],   'foo',   true],   # rc via a == a, rlec via b == b
-      [['{a}x{b}','{a}y{b}'],   'A:{r}', true],   # rc via a == a, rlec via b == b
+      [['{a}x{b}','{a}y{b}'],   nil,     true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   'foo',   true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   'A:{r}', true],   # rc a == a, rlec b == b
       [['a','b'],               nil,     false],
       [['a','b'],               'foo',   false],
-      [['a','b'],               'A:{r}', true],   # both forms via r == r
+      [['a','b'],               'A:{r}', true],   # both forms r == r
       [['{k}1','{k1}'],         nil,     false],
       [['{k}1','{k1}'],         'foo',   false],
       [['{k}1','{k1}'],         'A:{r}', false],
@@ -286,12 +286,12 @@ class Redis
       [['{k1}','{k2}'],         nil,     false],
       [['{k1}','{k2}'],         'foo',   false],
       [['{k1}','{k2}'],         'A:{r}', false],
-      [['{a}x{A}','{a}y{B}'],   nil,     false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{a}y{B}'],   'foo',   false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{a}y{B}'],   'A:{r}', false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{b}y{A}'],   nil,     false],  # rc via a != b, rlec via A == A
-      [['{a}x{A}','{b}y{A}'],   'foo',   false],  # rc via a != b, rlec via A == A
-      [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc via r == r, rlec via A == A
+      [['{a}x{A}','{a}y{B}'],   nil,     false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   'foo',   false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   'A:{r}', false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{b}y{A}'],   nil,     false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   'foo',   false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc r == r, rlec A == A
     ].each do |keys, namespace, expect|
       define_method("test_all_in_one_slot?_#{keys}_#{namespace}") do
         got = all_in_one_slot?(*keys,namespace: namespace)
@@ -314,7 +314,8 @@ class Redis
       #
       keys = ['{a}x{A}','{a}y{B}']
       #
-      # With both :rc and :rlec in the mix (the default), there is a mismatch.
+      # With both :rc and :rlec in the mix (the default), there is a
+      # mismatch.
       #
       got  = all_in_one_slot?(*keys)
       assert_equal false, got
