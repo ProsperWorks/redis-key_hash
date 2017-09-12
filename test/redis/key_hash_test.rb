@@ -3,8 +3,6 @@ require 'test_helper'
 class Redis
   class KeyHashTest < Minitest::Test
 
-    include Redis::KeyHash::ClassMethods
-
     def test_that_it_has_a_version_number
       refute_nil Redis::KeyHash::VERSION
     end
@@ -118,7 +116,7 @@ class Redis
       [ 'foo{bar}{}', :rlec,          ''           ],
     ].each do |str,style,expect|
       define_method("test_hash_tag_#{str}_#{style}_#{expect}") do
-        assert_equal expect, hash_tag(str,style: style)
+        assert_equal expect, Redis::KeyHash.hash_tag(str,style: style)
       end
     end
 
@@ -130,11 +128,11 @@ class Redis
       # This mapping "123456789" ==> 0x31C3 is an explicit example from
       # that spec, as by extension are all of these hashtag {} forms.
       #
-      assert_equal 0x31C3, hash_slot("123456789")
-      assert_equal 0x31C3, hash_slot("{123456789}")
-      assert_equal 0x31C3, hash_slot("foo{123456789}")
-      assert_equal 0x31C3, hash_slot("{123456789}bar")
-      assert_equal 0x31C3, hash_slot("foo{123456789}{}bar")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("123456789")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("{123456789}")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("foo{123456789}")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("{123456789}bar")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("foo{123456789}{}bar")
       #
       # These test values were confirmed empirically against "CLUSTER
       # KEYSLOT key" per http://redis.io/commands/cluster-keyslot.  I
@@ -157,12 +155,12 @@ class Redis
       #   127.0.0.1:6379> cluster keyslot foo{123456789}{bar}
       #   (integer) 12739
       #
-      assert_equal 12182, hash_slot('foo')
-      assert_equal 4638,  hash_slot('bnar')
-      assert_equal 5061,  hash_slot('bar')
-      assert_equal 7708,  hash_slot('monkeys')
-      assert_equal 12739, hash_slot('123456789')
-      assert_equal 12739, hash_slot('foo{123456789}')
+      assert_equal 12182, Redis::KeyHash.hash_slot('foo')
+      assert_equal 4638,  Redis::KeyHash.hash_slot('bnar')
+      assert_equal 5061,  Redis::KeyHash.hash_slot('bar')
+      assert_equal 7708,  Redis::KeyHash.hash_slot('monkeys')
+      assert_equal 12739, Redis::KeyHash.hash_slot('123456789')
+      assert_equal 12739, Redis::KeyHash.hash_slot('foo{123456789}')
       #
       # RC respects the first {}-expr:
       #
@@ -174,8 +172,8 @@ class Redis
         [ 'a{x', '{a{x}r}' ],
         [ 'b{x', '{b{x}r}' ],
       ].each do |a,b|
-        hash_a = hash_slot(a,style: :rc)
-        hash_b = hash_slot(b,style: :rc)
+        hash_a = Redis::KeyHash.hash_slot(a,style: :rc)
+        hash_b = Redis::KeyHash.hash_slot(b,style: :rc)
         assert_equal hash_a, hash_b
       end
       #
@@ -189,8 +187,8 @@ class Redis
         [ 'x}r', '{a{x}r}' ],
         [ 'x}r', '{b{x}r}' ],
       ].each do |a,b|
-        hash_a = hash_slot(a,style: :rlec)
-        hash_b = hash_slot(b,style: :rlec)
+        hash_a = Redis::KeyHash.hash_slot(a,style: :rlec)
+        hash_b = Redis::KeyHash.hash_slot(b,style: :rlec)
         assert_equal hash_a, hash_b
       end
     end
@@ -203,7 +201,7 @@ class Redis
       # This mapping "123456789" ==> 0x31C3 is an explicit example from
       # that spec.
       #
-      assert_equal 0x31C3, crc16("123456789")
+      assert_equal 0x31C3, Redis::KeyHash.crc16("123456789")
       #
       # These values are not based on explicit documentation, nor on
       # experimental test.  Rather, these are the values which are
@@ -217,17 +215,17 @@ class Redis
       # Note that in many cases the values diverge from those of
       # hash_slot, which is defined as crc16(hashtag(key))%16384.
       #
-      assert_equal 44950, crc16('foo')
-      assert_equal 21022, crc16('bnar')
-      assert_equal 37829, crc16('bar')
-      assert_equal 12739, crc16('123456789')
-      assert_equal 32848, crc16('foo{123456789}')
-      assert_equal 56860, crc16('monkeys')
+      assert_equal 44950, Redis::KeyHash.crc16('foo')
+      assert_equal 21022, Redis::KeyHash.crc16('bnar')
+      assert_equal 37829, Redis::KeyHash.crc16('bar')
+      assert_equal 12739, Redis::KeyHash.crc16('123456789')
+      assert_equal 32848, Redis::KeyHash.crc16('foo{123456789}')
+      assert_equal 56860, Redis::KeyHash.crc16('monkeys')
     end
 
     def test_hash_slot_agrees_with_dvirsky_crc16_slottable_h
       DVIRSKY_CRC16_SLOTTABLE_H.each_with_index do |str,idx|
-        assert_equal idx, hash_slot(str), "#{str} at #{idx}"
+        assert_equal idx, Redis::KeyHash.hash_slot(str), "#{str} at #{idx}"
       end
       assert_equal 2 ** 14, DVIRSKY_CRC16_SLOTTABLE_H.size
     end
@@ -311,18 +309,18 @@ class Redis
       [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc r == r, rlec A == A
     ].each do |keys, namespace, expect|
       define_method("test_all_in_one_slot?_#{keys}_#{namespace.inspect}") do
-        got = all_in_one_slot?(*keys,namespace: namespace)
+        got = Redis::KeyHash.all_in_one_slot?(*keys,namespace: namespace)
         assert_equal expect, got
       end
       define_method("test_all_in_one_slot!_#{keys}_#{namespace}") do
         if expect
-          all_in_one_slot!(*keys,namespace: namespace)
+          Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
         else
           assert_raises(Redis::ImpendingCrossSlotError) do
-            all_in_one_slot!(*keys,namespace: namespace)
+            Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
           end
           begin
-            all_in_one_slot!(*keys,namespace: namespace)
+            Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
           rescue Redis::ImpendingCrossSlotError => ex
             assert_equal     keys,      ex.keys
             assert_equal     namespace, ex.namespace
@@ -344,17 +342,17 @@ class Redis
       # With both :rc and :rlec in the mix (the default), there is a
       # mismatch.
       #
-      got  = all_in_one_slot?(*keys)
+      got  = Redis::KeyHash.all_in_one_slot?(*keys)
       assert_equal false, got
       #
       # For :rc alone, these keys match.
       #
-      got  = all_in_one_slot?(*keys, styles: [:rc])
+      got  = Redis::KeyHash.all_in_one_slot?(*keys, styles: [:rc])
       assert_equal true,  got
       #
       # For :rlec alone, these keys mismatch.
       #
-      got  = all_in_one_slot?(*keys, styles: [:rlec])
+      got  = Redis::KeyHash.all_in_one_slot?(*keys, styles: [:rlec])
       assert_equal false, got
     end
 

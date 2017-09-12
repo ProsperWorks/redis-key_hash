@@ -1,5 +1,5 @@
 class Redis
-  module KeyHash
+  class KeyHash
     #
     # Version plan/history:
     #
@@ -12,7 +12,9 @@ class Redis
     #
     # 0.0.4 - Verified existing behavior w/r/t Redis::Namespace, added
     #         more details in Redis::ImpendingCrossSlotError, plus
-    #         some Rubocop polish and defiance.
+    #         some Rubocop polish and defiance, removal of
+    #         Redis::KeyHash::ClassMethods inner-inner class,
+    #         Redis::KeyHash a class not a module.
     #
     # 0.1.0 - (future) Big README.md and Rdoc update, solicit feedback
     #         from select external beta users.
