@@ -242,58 +242,75 @@ class Redis
     #
     [
       [[],                      nil,     true],   # nothing to mismatch
+      [[],                      '',      true],   # nothing to mismatch
       [[],                      'foo',   true],   # nothing to mismatch
       [[],                      'A:{r}', true],   # nothing to mismatch
       [['a'],                   nil,     true],
+      [['a'],                   '',      true],
       [['a'],                   'foo',   true],
       [['a'],                   'A:{r}', true],
       [['a','a'],               nil,     true],
+      [['a','a'],               '',      true],
       [['a','a'],               'foo',   true],
       [['a','a'],               'A:{r}', true],
       [['{k}1','k'],            nil,     true],
+      [['{k}1','k'],            '',      false],  # k != :k
       [['{k}1','k'],            'foo',   false],
       [['{k}1','k'],            'A:{r}', false],
       [['{k}1','{k}2'],         nil,     true],
+      [['{k}1','{k}2'],         '',      true],
       [['{k}1','{k}2'],         'foo',   true],
       [['{k}1','{k}2'],         'A:{r}', true],
       [['{k}1','{k}2','{k}3'],  nil,     true],
+      [['{k}1','{k}2','{k}3'],  '',      true],
       [['{k}1','{k}2','{k}3'],  'foo',   true],
       [['{k}1','{k}2','{k}3'],  'A:{r}', true],
       [['1{k}','k'],            nil,     true],
+      [['1{k}','k'],            '',      false],  # k != :k
       [['1{k}','k'],            'foo',   false],
       [['1{k}','k'],            'A:{r}', false],
       [['1{k}','2{k}'],         nil,     true],
+      [['1{k}','2{k}'],         '',      true],
       [['1{k}','2{k}'],         'foo',   true],
       [['1{k}','2{k}'],         'A:{r}', true],
       [['1{k}','2{k}','3{k}3'], nil,     true],
+      [['1{k}','2{k}','3{k}3'], '',      true],
       [['1{k}','2{k}','3{k}3'], 'foo',   true],
       [['1{k}','2{k}','3{k}3'], 'A:{r}', true],
       [['a{k}b','k'],           nil,     true],
+      [['a{k}b','k'],           '',      false],  # k != :k
       [['a{k}b','k'],           'foo',   false],
       [['a{k}b','k'],           'A:{r}', false],
       [['{a}x{b}','{a}y{b}'],   nil,     true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   '',      true],   # rc a == a, rlec b == b
       [['{a}x{b}','{a}y{b}'],   'foo',   true],   # rc a == a, rlec b == b
       [['{a}x{b}','{a}y{b}'],   'A:{r}', true],   # rc a == a, rlec b == b
       [['a','b'],               nil,     false],
+      [['a','b'],               '',      false],
       [['a','b'],               'foo',   false],
       [['a','b'],               'A:{r}', true],   # both forms r == r
       [['{k}1','{k1}'],         nil,     false],
+      [['{k}1','{k1}'],         '',      false],
       [['{k}1','{k1}'],         'foo',   false],
       [['{k}1','{k1}'],         'A:{r}', false],
       [['{k}1','b'],            nil,     false],
+      [['{k}1','b'],            '',      false],
       [['{k}1','b'],            'foo',   false],
       [['{k}1','b'],            'A:{r}', false],
       [['{k1}','{k2}'],         nil,     false],
+      [['{k1}','{k2}'],         '',      false],
       [['{k1}','{k2}'],         'foo',   false],
       [['{k1}','{k2}'],         'A:{r}', false],
       [['{a}x{A}','{a}y{B}'],   nil,     false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   '',      false],  # rc a == a, rlec A != B
       [['{a}x{A}','{a}y{B}'],   'foo',   false],  # rc a == a, rlec A != B
       [['{a}x{A}','{a}y{B}'],   'A:{r}', false],  # rc a == a, rlec A != B
       [['{a}x{A}','{b}y{A}'],   nil,     false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   '',      false],  # rc a != b, rlec A == A
       [['{a}x{A}','{b}y{A}'],   'foo',   false],  # rc a != b, rlec A == A
       [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc r == r, rlec A == A
     ].each do |keys, namespace, expect|
-      define_method("test_all_in_one_slot?_#{keys}_#{namespace}") do
+      define_method("test_all_in_one_slot?_#{keys}_#{namespace.inspect}") do
         got = all_in_one_slot?(*keys,namespace: namespace)
         assert_equal expect, got
       end

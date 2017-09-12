@@ -102,12 +102,19 @@ class Redis
       # same hash_slot
       #
       def all_in_one_slot!(*keys, namespace: nil, styles: DEFAULT_STYLES)
-        #
-        # TODO: broken when namepsace='' !!!
-        #
         namespaced_keys   = keys
         if namespace
-          namespaced_keys = keys.map{|key|"#{namespace}:#{key}"}
+          #
+          # Although Redis::Namespace.add_namespace is private, I have
+          # confirmed that when namespace is the empty string, "key"
+          # maps to ":key".
+          #
+          # That is, namespace nil has no effect, but namespace ''
+          # results in a ':' prepended to every key.
+          #
+          # Naturally, this can affect the key's hash tag.
+          #
+          namespaced_keys = keys.map { |key| "#{namespace}:#{key}" }
         end
         problems          = []
         styles.each do |style|

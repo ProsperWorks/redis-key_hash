@@ -10,9 +10,9 @@ class Redis
     # 0.0.3 - Fix :rc to match https://redis.io/topics/cluster-spec,
     #         added Rubocop checks.
     #
-    # 0.0.4 - Bug fixes around namespace, more details in
-    #         Redis::ImpendingCrossSlotError, Rubocop polish and
-    #         defiance.
+    # 0.0.4 - Verified existing behavior w/r/t Redis::Namespace, added
+    #         more details in Redis::ImpendingCrossSlotError, plus
+    #         some Rubocop polish and defiance.
     #
     # 0.1.0 - (future) Big README.md and Rdoc update, solicit feedback
     #         from select external beta users.
