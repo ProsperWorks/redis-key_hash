@@ -1,13 +1,11 @@
 require 'redis/key_hash/version'
 require 'redis/impending_cross_slot_error'
 
-module Redis::KeyHash
+class Redis
 
-  def self.included(base)
-    base.extend(ClassMethods)
-  end
-
-  module ClassMethods
+  # Namespace for key-hashing methods.
+  #
+  class KeyHash
 
     # TODO: rdoc
 
@@ -19,12 +17,14 @@ module Redis::KeyHash
       # and is taken largely from the reference example provided in
       # http://redis.io/topics/cluster-spec.
       #
-      :rc   => /^[^{]*{([^}]+)}/, # RC uses first {}-expr, but only if nonempty
+      :rc   => /^[^{]*{([^}]+)}/, # RC w/ first {}-expr, but only if nonempty
 
       # The :style => :rlec implementation is partly speculative.  It
       # is mostly interpreted from the default RedisLabs Enterprise
-      # Cluster documentation at
-      # https://redislabs.com/redis-enterprise-documentation/concepts-architecture/architecture/database-clustering/,
+      # Cluster documentation at:
+      #
+      #   https://redislabs.com/redis-enterprise-documentation/concepts-architecture/architecture/database-clustering/
+      #
       # plus our experience at ProsperWorks that, out of the box, RLEC
       # uses the *last* {}-expr, not the first as in RC, from :rc
       # (which we would not care about), they are also structually
@@ -66,14 +66,12 @@ module Redis::KeyHash
     # @return true if all of keys provably have the same hash_slot under
     # all styles by virtue of having a single hash_tag, false otherwise.
     #
-    def all_in_one_slot?(*keys, namespace: nil, styles: DEFAULT_STYLES)
-      begin
-        all_in_one_slot!(*keys, namespace: namespace, styles: styles)
-      rescue Redis::ImpendingCrossSlotError
-        return false
-      else
-        return true
-      end
+    def self.all_in_one_slot?(*keys, namespace: nil, styles: DEFAULT_STYLES)
+      all_in_one_slot!(*keys, namespace: namespace, styles: styles)
+    rescue Redis::ImpendingCrossSlotError
+      return false
+    else
+      return true
     end
 
     # Like all_in_one_slot?, mismatch raises Redis::ImpendingCrossSlotError.
@@ -95,21 +93,36 @@ module Redis::KeyHash
     # keys have a different hash_tag hence will not provably have the
     # same hash_slot
     #
-    def all_in_one_slot!(*keys, namespace: nil, styles: DEFAULT_STYLES)
-      nkeys       = namespace ? keys.map { |key| "#{namespace}:#{key}" } : keys
-      style2slot  = Hash.new
-      problems    = []
+    def self.all_in_one_slot!(*keys, namespace: nil, styles: DEFAULT_STYLES)
+      namespaced_keys   = keys
+      if namespace
+        #
+        # Although Redis::Namespace.add_namespace is private, I have
+        # confirmed that when namespace is the empty string, "key"
+        # maps to ":key".
+        #
+        # That is, namespace nil has no effect, but namespace ''
+        # results in a ':' prepended to every key.
+        #
+        # Naturally, this can affect the key's hash tag.
+        #
+        namespaced_keys = keys.map { |key| "#{namespace}:#{key}" }
+      end
+      problems          = []
       styles.each do |style|
-        tags      = nkeys.map { |nkey| hash_tag(nkey,style: style) }.uniq
+        tags            = namespaced_keys.map do |namespaced_key|
+          hash_tag(namespaced_key,style: style)
+        end.uniq
         next if tags.size <= 1
         problems << "style #{style} sees tags #{tags.join(',')}"
       end
       if 0 != problems.size
-        err  = "CROSSSLOT"
-        err += " namespace=#{namespace}"
-        err += " keys=#{keys}"
-        err += " problems=#{problems}"
-        raise Redis::ImpendingCrossSlotError, err
+        raise Redis::ImpendingCrossSlotError.new(
+                namespace,
+                keys,
+                namespaced_keys,
+                problems
+              )
       end
       true
     end
@@ -123,9 +136,9 @@ module Redis::KeyHash
     #
     # @param String the tag extracted from key as appropriate for :style.
     #
-    def hash_tag(key, style: DEFAULT_STYLE)
+    def self.hash_tag(key, style: DEFAULT_STYLE)
       regexp = nil
-      if KNOWN_STYLES.has_key?(style)
+      if KNOWN_STYLES.key?(style)
         regexp = KNOWN_STYLES[style] # some are predefined
       elsif style.is_a?(Regexp)
         regexp = style               # you can define your own
@@ -134,7 +147,7 @@ module Redis::KeyHash
         raise ArgumentError, "bogus style #{style}"
       end
       match = regexp.match(key)
-      return match ? match[1] : key
+      match ? match[1] : key
     end
 
     # Computes the Redis hash_slot for a given key.
@@ -153,7 +166,7 @@ module Redis::KeyHash
     #
     # @param non-negative Integer the hash which Redis will use to slot key
     #
-    def hash_slot(key, style: DEFAULT_STYLE)
+    def self.hash_slot(key, style: DEFAULT_STYLE)
       tag = hash_tag(key, style: style)
       crc16(tag) % 16384
     end
@@ -169,10 +182,10 @@ module Redis::KeyHash
     # @param non-negative Integer the crc16 which Redis will use to
     # compute a hash_key.
     #
-    def crc16(key)
+    def self.crc16(key)
       crc = 0
       key.each_char do |char|
-        crc = ((crc << 8) & 0xFFFF) ^ CRC16TAB[((crc >> 8) ^ char.ord) & 0x00FF]
+        crc = ((crc<<8) & 0xFFFF) ^ CRC16TAB[((crc>>8) ^ char.ord) & 0x00FF]
       end
       crc
     end

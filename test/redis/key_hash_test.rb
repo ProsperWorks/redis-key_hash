@@ -3,8 +3,6 @@ require 'test_helper'
 class Redis
   class KeyHashTest < Minitest::Test
 
-    include Redis::KeyHash::ClassMethods
-
     def test_that_it_has_a_version_number
       refute_nil Redis::KeyHash::VERSION
     end
@@ -118,7 +116,7 @@ class Redis
       [ 'foo{bar}{}', :rlec,          ''           ],
     ].each do |str,style,expect|
       define_method("test_hash_tag_#{str}_#{style}_#{expect}") do
-        assert_equal expect, hash_tag(str,style: style)
+        assert_equal expect, Redis::KeyHash.hash_tag(str,style: style)
       end
     end
 
@@ -130,11 +128,11 @@ class Redis
       # This mapping "123456789" ==> 0x31C3 is an explicit example from
       # that spec, as by extension are all of these hashtag {} forms.
       #
-      assert_equal 0x31C3, hash_slot("123456789")
-      assert_equal 0x31C3, hash_slot("{123456789}")
-      assert_equal 0x31C3, hash_slot("foo{123456789}")
-      assert_equal 0x31C3, hash_slot("{123456789}bar")
-      assert_equal 0x31C3, hash_slot("foo{123456789}{}bar")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("123456789")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("{123456789}")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("foo{123456789}")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("{123456789}bar")
+      assert_equal 0x31C3, Redis::KeyHash.hash_slot("foo{123456789}{}bar")
       #
       # These test values were confirmed empirically against "CLUSTER
       # KEYSLOT key" per http://redis.io/commands/cluster-keyslot.  I
@@ -157,12 +155,12 @@ class Redis
       #   127.0.0.1:6379> cluster keyslot foo{123456789}{bar}
       #   (integer) 12739
       #
-      assert_equal 12182, hash_slot('foo')
-      assert_equal 4638,  hash_slot('bnar')
-      assert_equal 5061,  hash_slot('bar')
-      assert_equal 7708,  hash_slot('monkeys')
-      assert_equal 12739, hash_slot('123456789')
-      assert_equal 12739, hash_slot('foo{123456789}')
+      assert_equal 12182, Redis::KeyHash.hash_slot('foo')
+      assert_equal 4638,  Redis::KeyHash.hash_slot('bnar')
+      assert_equal 5061,  Redis::KeyHash.hash_slot('bar')
+      assert_equal 7708,  Redis::KeyHash.hash_slot('monkeys')
+      assert_equal 12739, Redis::KeyHash.hash_slot('123456789')
+      assert_equal 12739, Redis::KeyHash.hash_slot('foo{123456789}')
       #
       # RC respects the first {}-expr:
       #
@@ -174,8 +172,8 @@ class Redis
         [ 'a{x', '{a{x}r}' ],
         [ 'b{x', '{b{x}r}' ],
       ].each do |a,b|
-        hash_a = hash_slot(a,style: :rc)
-        hash_b = hash_slot(b,style: :rc)
+        hash_a = Redis::KeyHash.hash_slot(a,style: :rc)
+        hash_b = Redis::KeyHash.hash_slot(b,style: :rc)
         assert_equal hash_a, hash_b
       end
       #
@@ -189,8 +187,8 @@ class Redis
         [ 'x}r', '{a{x}r}' ],
         [ 'x}r', '{b{x}r}' ],
       ].each do |a,b|
-        hash_a = hash_slot(a,style: :rlec)
-        hash_b = hash_slot(b,style: :rlec)
+        hash_a = Redis::KeyHash.hash_slot(a,style: :rlec)
+        hash_b = Redis::KeyHash.hash_slot(b,style: :rlec)
         assert_equal hash_a, hash_b
       end
     end
@@ -203,7 +201,7 @@ class Redis
       # This mapping "123456789" ==> 0x31C3 is an explicit example from
       # that spec.
       #
-      assert_equal 0x31C3, crc16("123456789")
+      assert_equal 0x31C3, Redis::KeyHash.crc16("123456789")
       #
       # These values are not based on explicit documentation, nor on
       # experimental test.  Rather, these are the values which are
@@ -217,92 +215,119 @@ class Redis
       # Note that in many cases the values diverge from those of
       # hash_slot, which is defined as crc16(hashtag(key))%16384.
       #
-      assert_equal 44950, crc16('foo')
-      assert_equal 21022, crc16('bnar')
-      assert_equal 37829, crc16('bar')
-      assert_equal 12739, crc16('123456789')
-      assert_equal 32848, crc16('foo{123456789}')
-      assert_equal 56860, crc16('monkeys')
+      assert_equal 44950, Redis::KeyHash.crc16('foo')
+      assert_equal 21022, Redis::KeyHash.crc16('bnar')
+      assert_equal 37829, Redis::KeyHash.crc16('bar')
+      assert_equal 12739, Redis::KeyHash.crc16('123456789')
+      assert_equal 32848, Redis::KeyHash.crc16('foo{123456789}')
+      assert_equal 56860, Redis::KeyHash.crc16('monkeys')
     end
 
     def test_hash_slot_agrees_with_dvirsky_crc16_slottable_h
       DVIRSKY_CRC16_SLOTTABLE_H.each_with_index do |str,idx|
-        assert_equal idx, hash_slot(str), "#{str} at #{idx}"
+        assert_equal idx, Redis::KeyHash.hash_slot(str), "#{str} at #{idx}"
       end
       assert_equal 2 ** 14, DVIRSKY_CRC16_SLOTTABLE_H.size
     end
 
-    #
-    # Happy sets of keys which match via both forms of hash_slot, :rc and :rlec.
+    # Happy sets of keys which match via both forms of hash_slot, :rc
+    # and :rlec.
     #
     # Unhappy sets of keys mismatch via either :rc, :rlec, or both.
     #
-    # redis-namespace can have a big effect since it alters the keys but
-    # only at the front.
+    # redis-namespace can have a big effect since it alters the keys
+    # but only at the front.
     #
     [
       [[],                      nil,     true],   # nothing to mismatch
+      [[],                      '',      true],   # nothing to mismatch
       [[],                      'foo',   true],   # nothing to mismatch
       [[],                      'A:{r}', true],   # nothing to mismatch
       [['a'],                   nil,     true],
+      [['a'],                   '',      true],
       [['a'],                   'foo',   true],
       [['a'],                   'A:{r}', true],
       [['a','a'],               nil,     true],
+      [['a','a'],               '',      true],
       [['a','a'],               'foo',   true],
       [['a','a'],               'A:{r}', true],
       [['{k}1','k'],            nil,     true],
+      [['{k}1','k'],            '',      false],  # k != :k
       [['{k}1','k'],            'foo',   false],
       [['{k}1','k'],            'A:{r}', false],
       [['{k}1','{k}2'],         nil,     true],
+      [['{k}1','{k}2'],         '',      true],
       [['{k}1','{k}2'],         'foo',   true],
       [['{k}1','{k}2'],         'A:{r}', true],
       [['{k}1','{k}2','{k}3'],  nil,     true],
+      [['{k}1','{k}2','{k}3'],  '',      true],
       [['{k}1','{k}2','{k}3'],  'foo',   true],
       [['{k}1','{k}2','{k}3'],  'A:{r}', true],
       [['1{k}','k'],            nil,     true],
+      [['1{k}','k'],            '',      false],  # k != :k
       [['1{k}','k'],            'foo',   false],
       [['1{k}','k'],            'A:{r}', false],
       [['1{k}','2{k}'],         nil,     true],
+      [['1{k}','2{k}'],         '',      true],
       [['1{k}','2{k}'],         'foo',   true],
       [['1{k}','2{k}'],         'A:{r}', true],
       [['1{k}','2{k}','3{k}3'], nil,     true],
+      [['1{k}','2{k}','3{k}3'], '',      true],
       [['1{k}','2{k}','3{k}3'], 'foo',   true],
       [['1{k}','2{k}','3{k}3'], 'A:{r}', true],
       [['a{k}b','k'],           nil,     true],
+      [['a{k}b','k'],           '',      false],  # k != :k
       [['a{k}b','k'],           'foo',   false],
       [['a{k}b','k'],           'A:{r}', false],
-      [['{a}x{b}','{a}y{b}'],   nil,     true],   # rc via a == a, rlec via b == b
-      [['{a}x{b}','{a}y{b}'],   'foo',   true],   # rc via a == a, rlec via b == b
-      [['{a}x{b}','{a}y{b}'],   'A:{r}', true],   # rc via a == a, rlec via b == b
+      [['{a}x{b}','{a}y{b}'],   nil,     true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   '',      true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   'foo',   true],   # rc a == a, rlec b == b
+      [['{a}x{b}','{a}y{b}'],   'A:{r}', true],   # rc a == a, rlec b == b
       [['a','b'],               nil,     false],
+      [['a','b'],               '',      false],
       [['a','b'],               'foo',   false],
-      [['a','b'],               'A:{r}', true],   # both forms via r == r
+      [['a','b'],               'A:{r}', true],   # both forms r == r
       [['{k}1','{k1}'],         nil,     false],
+      [['{k}1','{k1}'],         '',      false],
       [['{k}1','{k1}'],         'foo',   false],
       [['{k}1','{k1}'],         'A:{r}', false],
       [['{k}1','b'],            nil,     false],
+      [['{k}1','b'],            '',      false],
       [['{k}1','b'],            'foo',   false],
       [['{k}1','b'],            'A:{r}', false],
       [['{k1}','{k2}'],         nil,     false],
+      [['{k1}','{k2}'],         '',      false],
       [['{k1}','{k2}'],         'foo',   false],
       [['{k1}','{k2}'],         'A:{r}', false],
-      [['{a}x{A}','{a}y{B}'],   nil,     false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{a}y{B}'],   'foo',   false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{a}y{B}'],   'A:{r}', false],  # rc via a == a, rlec via A != B
-      [['{a}x{A}','{b}y{A}'],   nil,     false],  # rc via a != b, rlec via A == A
-      [['{a}x{A}','{b}y{A}'],   'foo',   false],  # rc via a != b, rlec via A == A
-      [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc via r == r, rlec via A == A
+      [['{a}x{A}','{a}y{B}'],   nil,     false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   '',      false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   'foo',   false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{a}y{B}'],   'A:{r}', false],  # rc a == a, rlec A != B
+      [['{a}x{A}','{b}y{A}'],   nil,     false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   '',      false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   'foo',   false],  # rc a != b, rlec A == A
+      [['{a}x{A}','{b}y{A}'],   'A:{r}', true],   # rc r == r, rlec A == A
     ].each do |keys, namespace, expect|
-      define_method("test_all_in_one_slot?_#{keys}_#{namespace}") do
-        got = all_in_one_slot?(*keys,namespace: namespace)
+      define_method("test_all_in_one_slot?_#{keys}_#{namespace.inspect}") do
+        got = Redis::KeyHash.all_in_one_slot?(*keys,namespace: namespace)
         assert_equal expect, got
       end
       define_method("test_all_in_one_slot!_#{keys}_#{namespace}") do
         if expect
-          all_in_one_slot!(*keys,namespace: namespace)
+          Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
         else
           assert_raises(Redis::ImpendingCrossSlotError) do
-            all_in_one_slot!(*keys,namespace: namespace)
+            Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
+          end
+          begin
+            Redis::KeyHash.all_in_one_slot!(*keys,namespace: namespace)
+          rescue Redis::ImpendingCrossSlotError => ex
+            assert_equal     keys,      ex.keys
+            assert_equal     namespace, ex.namespace
+            assert_equal     Array,     ex.problems.class
+            assert_operator  0, :<,     ex.problems.size
+            assert_equal     Array,     ex.namespaced_keys.class
+            assert_equal     keys.size, ex.namespaced_keys.size
           end
         end
       end
@@ -314,19 +339,20 @@ class Redis
       #
       keys = ['{a}x{A}','{a}y{B}']
       #
-      # With both :rc and :rlec in the mix (the default), there is a mismatch.
+      # With both :rc and :rlec in the mix (the default), there is a
+      # mismatch.
       #
-      got  = all_in_one_slot?(*keys)
+      got  = Redis::KeyHash.all_in_one_slot?(*keys)
       assert_equal false, got
       #
       # For :rc alone, these keys match.
       #
-      got  = all_in_one_slot?(*keys, styles: [:rc])
+      got  = Redis::KeyHash.all_in_one_slot?(*keys, styles: [:rc])
       assert_equal true,  got
       #
       # For :rlec alone, these keys mismatch.
       #
-      got  = all_in_one_slot?(*keys, styles: [:rlec])
+      got  = Redis::KeyHash.all_in_one_slot?(*keys, styles: [:rlec])
       assert_equal false, got
     end
 
