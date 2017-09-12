@@ -1,4 +1,19 @@
+
 class Redis
+
+  # Forward declarations of Redis package errors so we can declare
+  # them as the parent of Redis::ImpendingCrossSlotError without
+  # taking a hard development or runtime dependency on the gem
+  # 'redis'.
+  #
+  # There remains an implicit dependency that later, when the 'redis'
+  # gem is loaded by the app, these declarations are consistent with
+  # those in the gem.
+  #
+  class BaseError < RuntimeError
+  end
+  class CommandError < BaseError
+  end
 
   # Captures the details from a potential CROSSSLOT error as
   # identified by Redis::KeyHash.all_in_one_slot!.
@@ -10,7 +25,12 @@ class Redis
   #
   # TODO: rdoc
   #
-  class ImpendingCrossSlotError < ArgumentError # TODO: Redis::CommandError?
+  # Redis::ImpendingCrossSlotError is a Redis::CommandError because
+  # the intention is to use Redis::KeyHash.all_in_one_slot! as a
+  # filter in front of Redis#eval, which will raise a
+  # Redis::CommandError when redis-server returns a CROSSSLOT error.
+  #
+  class ImpendingCrossSlotError < CommandError
 
     def initialize(namespace,keys,namespaced_keys,problems)
       err  = "CROSSSLOT"
