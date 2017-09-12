@@ -1,4 +1,3 @@
-inherit_from: .rubocop_todo.yml
 
 AllCops:
   Include:
@@ -78,6 +77,11 @@ Style/IfUnlessModifier:
 Style/NegatedIf:
   Enabled: false
 
+# Too pedantic.
+#
+Style/NumericLiterals:
+  Enabled: false
+
 # "Do not use semicolons to terminate expressions."
 #
 # That's great when I terminate a single-line expression with a
@@ -126,7 +130,7 @@ Style/TernaryParentheses:
 Style/TrailingCommaInLiteral:
   Enabled: false
 
-# Too pedantic.  I am starting to think I should swicth from "opt out"
+# Too pedantic.  I am starting to think I should switch from "opt out"
 # to "opt in" on the Style family.
 #
 Style/WordArray:
