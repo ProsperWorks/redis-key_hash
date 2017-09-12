@@ -10,11 +10,18 @@ class Redis
     # 0.0.3 - Fix :rc to match https://redis.io/topics/cluster-spec,
     #         added Rubocop checks.
     #
-    # 0.0.4 - Verified existing behavior w/r/t Redis::Namespace, added
-    #         more details in Redis::ImpendingCrossSlotError, plus
-    #         some Rubocop polish and defiance, removal of
-    #         Redis::KeyHash::ClassMethods inner-inner class,
-    #         Redis::KeyHash a class not a module.
+    # 0.0.4 - Verified existing behavior w/r/t Redis::Namespace.
+    #
+    #         Added more details in Redis::ImpendingCrossSlotError.
+    #
+    #         Rubocop polish and defiance.
+    #
+    #         Redis::KeyHash::ClassMethods inner-inner class removed.
+    #
+    #         Redis::KeyHash changed to a class, not a module.
+    #
+    #         Redis::ImpendingCrossSlotError changed from
+    #         ArgumentError to Redis::RuntimeError.
     #
     # 0.1.0 - (future) Big README.md and Rdoc update, solicit feedback
     #         from select external beta users.
