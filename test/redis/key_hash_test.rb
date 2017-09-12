@@ -304,6 +304,16 @@ class Redis
           assert_raises(Redis::ImpendingCrossSlotError) do
             all_in_one_slot!(*keys,namespace: namespace)
           end
+          begin
+            all_in_one_slot!(*keys,namespace: namespace)
+          rescue Redis::ImpendingCrossSlotError => ex
+            assert_equal     keys,      ex.keys
+            assert_equal     namespace, ex.namespace
+            assert_equal     Array,     ex.problems.class
+            assert_operator  0, :<,     ex.problems.size
+            assert_equal     Array,     ex.namespaced_keys.class
+            assert_equal     keys.size, ex.namespaced_keys.size
+          end
         end
       end
     end

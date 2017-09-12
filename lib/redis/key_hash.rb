@@ -103,23 +103,27 @@ class Redis
       #
       def all_in_one_slot!(*keys, namespace: nil, styles: DEFAULT_STYLES)
         #
-        # TODO: broken when namepsace=''
+        # TODO: broken when namepsace='' !!!
         #
-        # TODO: include nkeys in err
-        #
-        nkeys       = namespace ? keys.map{|key|"#{namespace}:#{key}"}  : keys
-        problems    = []
+        namespaced_keys   = keys
+        if namespace
+          namespaced_keys = keys.map{|key|"#{namespace}:#{key}"}
+        end
+        problems          = []
         styles.each do |style|
-          tags      = nkeys.map { |nkey| hash_tag(nkey,style: style) }.uniq
+          tags            = namespaced_keys.map do |namespaced_key|
+            hash_tag(namespaced_key,style: style)
+          end.uniq
           next if tags.size <= 1
           problems << "style #{style} sees tags #{tags.join(',')}"
         end
         if 0 != problems.size
-          err  = "CROSSSLOT"
-          err += " namespace=#{namespace}"
-          err += " keys=#{keys}"
-          err += " problems=#{problems}"
-          raise Redis::ImpendingCrossSlotError, err
+          raise Redis::ImpendingCrossSlotError.new(
+                  namespace,
+                  keys,
+                  namespaced_keys,
+                  problems
+                )
         end
         true
       end
