@@ -5,6 +5,9 @@ before_install:
   - gem install rubocop
 rvm:
   - 2.1.6
+  - 2.2.9
+  - 2.4.3
+  - 2.5.0
 script:
-  - rubocop
-  - rake test
+  - bundle exec rubocop --display-cop-names --display-style-guide
+  - bundle exec rake test
