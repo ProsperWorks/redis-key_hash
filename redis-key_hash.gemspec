@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   # We use "foo: bar" syntax liberally, not the older ":foo => bar".
   # Possibly other Ruby 2-isms as well.
   #
-  spec.required_ruby_version = '=> 2.1'
+  spec.required_ruby_version = '>= 2.1'
 
   spec.add_development_dependency 'bundler',  '~> 1.16.0'
   spec.add_development_dependency 'minitest', '~> 5.11.3'
